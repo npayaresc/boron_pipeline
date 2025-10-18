@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a machine learning pipeline for predicting magnesium concentration from LIBS (Laser-Induced Breakdown Spectroscopy) spectral data. The pipeline processes spectral intensity measurements at specific wavelengths to predict magnesium percentage in samples.
+This is a machine learning pipeline for predicting boron concentration from LIBS (Laser-Induced Breakdown Spectroscopy) spectral data. The pipeline processes spectral intensity measurements at specific wavelengths to predict boron percentage in samples.
 
 ## Key Commands
 
@@ -262,7 +262,7 @@ python main.py detect-mislabels --no-raw-spectral  # Skip raw spectral analysis
 1. **Raw Data Input** → Spectral files in `.csv.txt` format
 2. **Data Averaging** → Groups and averages multiple measurements per sample
 3. **Outlier Detection** → Uses SAM and MAD algorithms to identify bad data
-4. **Feature Engineering** → Extracts peak features from spectral regions (213-215nm and 253-256nm for magnesium)
+4. **Feature Engineering** → Extracts peak features from spectral regions (specific to boron - needs configuration)
 5. **Model Training** → Multiple algorithms including ensemble methods
 6. **Prediction & Reporting** → Generates predictions with calibration plots and metrics
 
@@ -275,9 +275,9 @@ python main.py detect-mislabels --no-raw-spectral  # Skip raw spectral analysis
 - **Spectral Processing** (`src/spectral_extraction/`): Peak extraction, Lorentzian fitting, and baseline correction
 
 ### Feature Engineering Strategies
-- **Mg_only**: Focus on magnesium spectral regions (516-519nm and 279-286nm)
+- **B_only**: Focus on boron spectral regions (needs configuration based on boron spectral lines)
 - **simple_only**: Basic spectral features without complex transformations
-- **full_context**: All spectral regions including C, H, O, N, P, Mg, and molecular bands
+- **full_context**: All spectral regions including C, H, O, N, P, B, and molecular bands
 
 ### Model Types
 - Standard models: Ridge, Lasso, Random Forest, XGBoost, LightGBM, CatBoost, SVR, ExtraTrees
@@ -287,7 +287,7 @@ python main.py detect-mislabels --no-raw-spectral  # Skip raw spectral analysis
 
 ### Neural Network Features
 - **Architecture**: Two variants - full (256→128→64→32→16→1) and light (64→32→16→1)
-- **Custom Loss**: MagnesiumLoss with 2x weighting for extreme concentrations (< 0.25% or > 0.40%)
+- **Custom Loss**: BoronLoss with 2x weighting for extreme concentrations (thresholds need configuration based on boron data)
 - **Regularization**: Dropout, batch normalization, L2 weight decay, early stopping
 - **Sample Weighting**: Configurable via `use_sample_weights` parameter in model config
   - `False` (default): Use only custom loss weighting (recommended to avoid double-weighting)

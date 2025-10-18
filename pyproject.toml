@@ -1,7 +1,7 @@
 [project]
-name = "magnesium-pipeline"
+name = "boron-pipeline"
 version = "0.1.0"
-description = "LIBS-based magnesium concentration prediction pipeline"
+description = "LIBS-based boron concentration prediction pipeline"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
