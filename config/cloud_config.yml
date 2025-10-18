@@ -1,0 +1,14 @@
+deployment:
+  auto_commit: true
+  auto_push: false
+  environment: production
+gcp:
+  bucket_name: staging-magnesium-data
+  project_id: mapana-ai-models
+  region: us-central1
+training:
+  machine_type: n1-standard-4
+  mode: autogluon
+  strategy: full_context
+  use_gpu: true
+  use_raw_spectral: false
