@@ -2,7 +2,7 @@
 Concentration-Range Feature Engineering Module
 
 This module adds concentration-aware features that help AutoGluon learn
-patterns specific to different magnesium concentration ranges, replacing
+patterns specific to different boron concentration ranges, replacing
 the need for manual sample weighting.
 """
 import logging
@@ -427,7 +427,7 @@ class ConcentrationRangeFeatures(BaseEstimator, TransformerMixin):
         all_k_cols = [col for col in X.columns if 'K_I' in col]
         logger.info(f"[DEBUG] Found {len(all_k_cols)} K_I columns: {all_k_cols[:5]}...")
 
-        # Learn K intensity characteristics if available (potassium used as context for magnesium prediction)
+        # Learn K intensity characteristics if available (potassium used as context for boron prediction)
         # Support both feature-engineered names (K_I_peak_area, K_I_peak_height) and raw spectral names (K_I_wl_*nm)
         k_intensity_cols = [col for col in X.columns if 'K_I' in col and (
             'peak_area' in col or 'peak_height' in col or 'wl_' in col)]
@@ -444,9 +444,9 @@ class ConcentrationRangeFeatures(BaseEstimator, TransformerMixin):
             }
             logger.info(f"Learned K_I intensity percentiles from {len(k_intensity_cols)} K_I features")
 
-        # Learn Mg/C ratio characteristics if available (magnesium/carbon - primary indicator for magnesium concentration)
-        if 'Mg_C_ratio' in X.columns:
-            mgc_ratios = X['Mg_C_ratio'].fillna(0)
+        # Learn Mg/C ratio characteristics if available (boron/carbon - primary indicator for boron concentration)
+        if 'B_C_ratio' in X.columns:
+            mgc_ratios = X['B_C_ratio'].fillna(0)
             self.mgc_ratio_percentiles_ = {
                 'p10': np.percentile(mgc_ratios, 10),
                 'p25': np.percentile(mgc_ratios, 25),
@@ -455,16 +455,16 @@ class ConcentrationRangeFeatures(BaseEstimator, TransformerMixin):
                 'p90': np.percentile(mgc_ratios, 90)
             }
         else:
-            raise ValueError("Mg_C_ratio not found in features. Ensure magnesium (Mg_I) and carbon (C_I) features are properly extracted.")
+            raise ValueError("B_C_ratio not found in features. Ensure boron (B_I) and carbon (C_I) features are properly extracted.")
             
         # Only learn statistics for elements that are actually present in the transformed features
         # Build list of elements to track based on what's actually in the data
         elements_to_track = []
 
-        # Always track Mg_I (magnesium) as it's the target element
+        # Always track B_I (boron) as it's the target element
         elements_to_track.append('Mg_I')
 
-        # Track K_I (potassium) as contextual element for magnesium prediction
+        # Track K_I (potassium) as contextual element for boron prediction
         elements_to_track.append('K_I')
 
         # Check if C_I features exist (used for Mg/C ratio baseline normalization)
@@ -514,8 +514,8 @@ class ConcentrationRangeFeatures(BaseEstimator, TransformerMixin):
                 'k_spectral_concentration_indicator'
             ])
             
-        # Only add ratio adjustment features if Mg_C_ratio column exists
-        if self.enable_ratio_adjustments and 'Mg_C_ratio' in X.columns:
+        # Only add ratio adjustment features if B_C_ratio column exists
+        if self.enable_ratio_adjustments and 'B_C_ratio' in X.columns:
             self.feature_names_out_.extend([
                 'mgc_ratio_concentration_adjusted',
                 'mgc_ratio_extreme_indicator'
@@ -524,7 +524,7 @@ class ConcentrationRangeFeatures(BaseEstimator, TransformerMixin):
         # Only add interaction features if we have the required feature columns
         if self.enable_concentration_interactions:
             # Add interaction features for key spectral features (potassium only)
-            key_features = [col for col in X.columns if any(key in col for key in ['K_I_simple', 'Mg_C_ratio', 'KC_height_ratio'])][:3]
+            key_features = [col for col in X.columns if any(key in col for key in ['K_I_simple', 'B_C_ratio', 'KC_height_ratio'])][:3]
             for feature in key_features:
                 self.feature_names_out_.append(f'{feature}_concentration_interaction')
                 
@@ -559,12 +559,12 @@ class ConcentrationRangeFeatures(BaseEstimator, TransformerMixin):
             raise ValueError("No K_I intensity percentiles found. Ensure potassium features are properly extracted.")
             
         # Add Mg/C ratio-based concentration score
-        if 'Mg_C_ratio' in X.columns and hasattr(self, 'mgc_ratio_percentiles_') and self.mgc_ratio_percentiles_:
-            mgc_ratio_score = (X['Mg_C_ratio'].fillna(0) - self.mgc_ratio_percentiles_['p25']) / (
+        if 'B_C_ratio' in X.columns and hasattr(self, 'mgc_ratio_percentiles_') and self.mgc_ratio_percentiles_:
+            mgc_ratio_score = (X['B_C_ratio'].fillna(0) - self.mgc_ratio_percentiles_['p25']) / (
                 self.mgc_ratio_percentiles_['p75'] - self.mgc_ratio_percentiles_['p25'] + 1e-6)
             X['concentration_ratio_score'] = np.clip(mgc_ratio_score, 0, 2)
         else:
-            raise ValueError("Mg_C_ratio not found or no ratio percentiles available. Ensure magnesium features are properly extracted.")
+            raise ValueError("B_C_ratio not found or no ratio percentiles available. Ensure boron features are properly extracted.")
             
         return X
         
@@ -613,8 +613,8 @@ class ConcentrationRangeFeatures(BaseEstimator, TransformerMixin):
         These help capture non-linear relationships between ratios and concentration
         that might be missed by standard ratio features.
         """
-        if 'Mg_C_ratio' in X.columns and hasattr(self, 'mgc_ratio_percentiles_') and self.mgc_ratio_percentiles_:
-            mgc_ratio = X['Mg_C_ratio'].fillna(0)
+        if 'B_C_ratio' in X.columns and hasattr(self, 'mgc_ratio_percentiles_') and self.mgc_ratio_percentiles_:
+            mgc_ratio = X['B_C_ratio'].fillna(0)
 
             # Concentration-adjusted Mg/C ratio
             # Apply stronger adjustment for extreme values
@@ -627,7 +627,7 @@ class ConcentrationRangeFeatures(BaseEstimator, TransformerMixin):
                                 (mgc_ratio >= self.mgc_ratio_percentiles_['p90'])
             X['mgc_ratio_extreme_indicator'] = extreme_ratio_mask.astype(float)
         else:
-            raise ValueError("Mg_C_ratio not found or no ratio percentiles available. Ensure magnesium features are properly extracted.")
+            raise ValueError("B_C_ratio not found or no ratio percentiles available. Ensure boron features are properly extracted.")
         
         return X
         
@@ -641,7 +641,7 @@ class ConcentrationRangeFeatures(BaseEstimator, TransformerMixin):
         concentration_score = self._estimate_concentration_likelihood(X)
         
         # Add interactions with key features (potassium only)
-        key_features = [col for col in X.columns if any(key in col for key in ['K_I_simple', 'Mg_C_ratio', 'KC_height_ratio'])][:3]
+        key_features = [col for col in X.columns if any(key in col for key in ['K_I_simple', 'B_C_ratio', 'KC_height_ratio'])][:3]
         
         for feature in key_features:
             if feature in X.columns:
@@ -684,8 +684,8 @@ class ConcentrationRangeFeatures(BaseEstimator, TransformerMixin):
             raise ValueError("No K_I intensity percentiles available. Ensure potassium features are properly extracted.")
                 
         # Adjust with Mg/C ratio if available
-        if 'Mg_C_ratio' in X.columns and hasattr(self, 'mgc_ratio_percentiles_') and self.mgc_ratio_percentiles_:
-            mgc_ratio = X['Mg_C_ratio'].fillna(0)
+        if 'B_C_ratio' in X.columns and hasattr(self, 'mgc_ratio_percentiles_') and self.mgc_ratio_percentiles_:
+            mgc_ratio = X['B_C_ratio'].fillna(0)
             ratio_norm = (mgc_ratio - self.mgc_ratio_percentiles_['p25']) / (
                 self.mgc_ratio_percentiles_['p75'] - self.mgc_ratio_percentiles_['p25'] + 1e-6)
             ratio_adjustment = concentration_range * 0.2 * np.clip(ratio_norm, -1, 1)  # Scale by actual range
@@ -693,7 +693,7 @@ class ConcentrationRangeFeatures(BaseEstimator, TransformerMixin):
             max_target = self.target_statistics_['max'] if self.target_statistics_ else 0.5
             score = np.clip(score + ratio_adjustment, min_target, max_target)
         else:
-            logger.warning("Mg_C_ratio not found for concentration estimation adjustment. Using intensity-only estimation.")
+            logger.warning("B_C_ratio not found for concentration estimation adjustment. Using intensity-only estimation.")
             
         return score
 
@@ -710,7 +710,7 @@ def create_enhanced_feature_pipeline_with_concentration(config, strategy: str, e
     
     Args:
         config: Pipeline configuration
-        strategy: Feature strategy ('Mg_only', 'simple_only', 'full_context')
+        strategy: Feature strategy ('B_only', 'simple_only', 'full_context')
         exclude_scaler: Whether to exclude StandardScaler from pipeline
         use_parallel: Whether to use parallel processing for feature generation
         n_jobs: Number of parallel jobs (-1 for all cores, -2 for all but one)
@@ -734,12 +734,12 @@ def create_enhanced_feature_pipeline_with_concentration(config, strategy: str, e
         ]
     else:
         # Feature engineering mode - configure concentration features based on strategy
-        if strategy == "Mg_only" or strategy == "M_only":
-            # Focus on magnesium-specific concentration patterns
+        if strategy == "B_only":
+            # Focus on boron-specific concentration patterns
             concentration_config = {
                 'enable_range_indicators': True,
                 'enable_spectral_modulation': True,
-                'enable_ratio_adjustments': True,  # Mg_C_ratio is included in Mg_only/M_only
+                'enable_ratio_adjustments': True,  # B_C_ratio is included in B_only
                 'enable_concentration_interactions': True
             }
         elif strategy == "simple_only":

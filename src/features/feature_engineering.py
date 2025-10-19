@@ -15,8 +15,8 @@ from sklearn.impute import SimpleImputer
 
 from src.features.feature_helpers import (
     extract_full_simple_features,
-    generate_high_magnesium_features,
-    generate_focused_magnesium_features,
+    generate_high_boron_features,
+    generate_focused_boron_features,
 )
 from src.config.pipeline_config import Config, PeakRegion
 from src.spectral_extraction.extractor import SpectralFeatureExtractor
@@ -356,38 +356,38 @@ class SpectralFeatureGenerator(BaseEstimator, TransformerMixin):
 
     def _get_strategy_regions(self) -> List[PeakRegion]:
         """Get regions optimized for current strategy."""
-        if self.strategy == "Mg_only" or self.strategy == "M_only":
-            # Magnesium regions + essential context elements for meaningful ratios
-            mg_regions = [self.config.magnesium_region]
-            # Add additional magnesium regions (Mg_I_285, Mg_II) for complete magnesium analysis
-            mg_regions.extend([r for r in self.config.context_regions if r.element.startswith("Mg_I") or r.element.startswith("Mg_II")])
+        if self.strategy == "B_only":
+            # Boron regions + essential context elements for meaningful ratios
+            b_regions = [self.config.boron_region]
+            # Add additional boron regions (B_I_208, B_II_345) for complete boron analysis
+            b_regions.extend([r for r in self.config.context_regions if r.element.startswith("B_I") or r.element.startswith("B_II")])
 
-            # Add K_I (potassium) as contextual information for magnesium prediction
-            # K features help improve magnesium prediction accuracy through elemental correlations
-            mg_regions.extend([r for r in self.config.context_regions if r.element.startswith("K_I")])
+            # Add K_I (potassium) as contextual information for boron prediction
+            # K features help improve boron prediction accuracy through elemental correlations
+            b_regions.extend([r for r in self.config.context_regions if r.element.startswith("K_I")])
 
-            # Add C_I for Mg_C_ratio calculation (baseline normalization)
+            # Add C_I for B_C_ratio calculation (baseline normalization)
             c_region = next((r for r in self.config.context_regions if r.element == "C_I"), None)
             if c_region:
-                mg_regions.append(c_region)
+                b_regions.append(c_region)
 
             # Add critical elements for agronomic ratios (Ca, N, P, S for nutrient balance)
             critical_elements = ['CA_I_422', 'CA_II_393', 'N_I_help', 'P_I_secondary']
             for element in critical_elements:
                 region = next((r for r in self.config.context_regions if r.element == element), None)
                 if region:
-                    mg_regions.append(region)
+                    b_regions.append(region)
 
             # Add S_I from macro_elements (secondary nutrient)
             s_region = next((r for r in self.config.macro_elements if r.element == "S_I"), None)
             if s_region:
-                mg_regions.append(s_region)
+                b_regions.append(s_region)
 
-            # NOTE: Mg_I_285 and Mg_II are already added above (line 359), so don't re-add them here
+            # NOTE: B_I_208 and B_II_345 are already added above, so don't re-add them here
 
-            logger.info(f"Mg_only strategy: using {len(mg_regions)} regions (vs {len(self.config.all_regions)} total)")
-            logger.info(f"Regions: {[r.element for r in mg_regions]}")
-            return mg_regions
+            logger.info(f"B_only strategy: using {len(b_regions)} regions (vs {len(self.config.all_regions)} total)")
+            logger.info(f"Regions: {[r.element for r in b_regions]}")
+            return b_regions
         else:
             # Full regions for simple_only and full_context
             return self.config.all_regions
@@ -425,26 +425,26 @@ class SpectralFeatureGenerator(BaseEstimator, TransformerMixin):
         index_to_use = X.index if hasattr(X, 'index') else None
         base_features_df = pd.DataFrame(base_features_list, index=index_to_use)
 
-        # Extract Mg_I and C_I areas for Mg/C ratio calculation (target element vs. baseline)
-        if "Mg_I_peak_0" not in base_features_df:
-            raise ValueError("Mg_I_peak_0 not found in base features. Ensure magnesium (Mg_I) region is properly defined and extracted.")
+        # Extract B_I and C_I areas for B/C ratio calculation (target element vs. baseline)
+        if "B_I_peak_0" not in base_features_df:
+            raise ValueError("B_I_peak_0 not found in base features. Ensure boron (B_I) region is properly defined and extracted.")
         if "C_I_peak_0" not in base_features_df:
             raise ValueError("C_I_peak_0 not found in base features. Ensure carbon (C_I) region is properly defined and extracted.")
 
-        mg_area = base_features_df["Mg_I_peak_0"].fillna(0.0)
+        b_area = base_features_df["B_I_peak_0"].fillna(0.0)
         c_area = base_features_df["C_I_peak_0"].fillna(1e-6)
 
-        # Calculate Mg/C ratio with clipping to prevent extreme values
-        mg_c_ratio_raw = mg_area / c_area.replace(0, 1e-6)
-        base_features_df["Mg_C_ratio"] = np.clip(mg_c_ratio_raw, -50.0, 50.0)
+        # Calculate B/C ratio with clipping to prevent extreme values
+        b_c_ratio_raw = b_area / c_area.replace(0, 1e-6)
+        base_features_df["B_C_ratio"] = np.clip(b_c_ratio_raw, -50.0, 50.0)
 
         # Choose feature generation method based on config
-        if self.config.use_focused_magnesium_features:
-            full_features_df, _ = generate_focused_magnesium_features(
+        if self.config.use_focused_boron_features:
+            full_features_df, _ = generate_focused_boron_features(
                 base_features_df, self._all_simple_names
             )
         else:
-            full_features_df, _ = generate_high_magnesium_features(
+            full_features_df, _ = generate_high_boron_features(
                 base_features_df, self._all_simple_names
             )
 
@@ -469,7 +469,7 @@ class SpectralFeatureGenerator(BaseEstimator, TransformerMixin):
                     len([n for n in expected_features if 'peak_' in n and 'simple' not in n])
                 )
                 logger.error("Simple features count: %d", len(self._all_simple_names))
-                logger.error("High Mg features count: %d", len(self._high_mg_names))
+                logger.error("High B features count: %d", len(self._high_b_names))
                 logger.error(
                     "Enhanced features count: %d",
                     len([n for n in expected_features if any(x in n for x in ['ratio', 'fwhm', 'asymmetry'])])
@@ -674,14 +674,14 @@ class SpectralFeatureGenerator(BaseEstimator, TransformerMixin):
         sample_base_df = pd.DataFrame([self._extract_base_features(X_sample.iloc[0])])
         self._use_enhanced = use_enhanced_temp
 
-        sample_base_df["Mg_C_ratio"] = 0.0
+        sample_base_df["B_C_ratio"] = 0.0
         # Choose feature generation method based on config for feature name determination
-        if self.config.use_focused_magnesium_features:
-            _, self._high_mg_names = generate_focused_magnesium_features(
+        if self.config.use_focused_boron_features:
+            _, self._high_b_names = generate_focused_boron_features(
                 sample_base_df, self._all_simple_names
             )
         else:
-            _, self._high_mg_names = generate_high_magnesium_features(
+            _, self._high_b_names = generate_high_boron_features(
                 sample_base_df, self._all_simple_names
             )
 
@@ -697,28 +697,28 @@ class SpectralFeatureGenerator(BaseEstimator, TransformerMixin):
             )
             enhanced_names = list(enhanced_sample.keys())
 
-        if self.strategy == "Mg_only" or self.strategy == "M_only":
-            # Include all Mg_I and Mg_II features for magnesium analysis
-            mg_complex = [name for name in all_complex_names if name.startswith("Mg_I") or name.startswith("Mg_II")]
-            mg_simple = [
-                name for name in self._all_simple_names if name.startswith("Mg_I") or name.startswith("Mg_II")
+        if self.strategy == "B_only":
+            # Include all B_I and B_II features for boron analysis
+            b_complex = [name for name in all_complex_names if name.startswith("B_I") or name.startswith("B_II")]
+            b_simple = [
+                name for name in self._all_simple_names if name.startswith("B_I") or name.startswith("B_II")
             ]
-            # Include all enhanced Mg features (ratios and plasma indicators)
-            mg_enhanced = [
+            # Include all enhanced B features (ratios and plasma indicators)
+            b_enhanced = [
                 name for name in enhanced_names
-                if "Mg" in name or "magnesium" in name.lower()
+                if "B_I" in name or "B_II" in name or "boron" in name.lower()
             ]
-            # Include physics-informed features for Mg (FWHM, gamma, asymmetry, etc.)
-            mg_physics = [name for name in physics_informed_names if name.startswith("Mg_I") or name.startswith("Mg_II")]
+            # Include physics-informed features for B (FWHM, gamma, asymmetry, etc.)
+            b_physics = [name for name in physics_informed_names if name.startswith("B_I") or name.startswith("B_II")]
 
-            # Always add Mg_C_ratio (critical magnesium indicator, computed separately)
-            self.feature_names_out_ = mg_complex + mg_physics + mg_simple + mg_enhanced + ["Mg_C_ratio"] + self._high_mg_names
+            # Always add B_C_ratio (critical boron indicator, computed separately)
+            self.feature_names_out_ = b_complex + b_physics + b_simple + b_enhanced + ["B_C_ratio"] + self._high_b_names
         elif self.strategy == "simple_only":
             self.feature_names_out_ = (
                 self._all_simple_names
                 + physics_informed_names  # NEW: Add physics-informed features
-                + ["Mg_C_ratio"]
-                + self._high_mg_names
+                + ["B_C_ratio"]
+                + self._high_b_names
                 + enhanced_names
             )
         elif self.strategy == "full_context":
@@ -726,8 +726,8 @@ class SpectralFeatureGenerator(BaseEstimator, TransformerMixin):
                 all_complex_names
                 + physics_informed_names  # NEW: Add physics-informed features
                 + self._all_simple_names
-                + ["Mg_C_ratio"]
-                + self._high_mg_names
+                + ["B_C_ratio"]
+                + self._high_b_names
                 + enhanced_names
             )
         else:
@@ -744,7 +744,7 @@ class SpectralFeatureGenerator(BaseEstimator, TransformerMixin):
             logger.error("  Strategy: %s", self.strategy)
             logger.error("  Complex names count: %d", len(all_complex_names))
             logger.error("  Simple names count: %d", len(self._all_simple_names))
-            logger.error("  High Mg names: %s", self._high_mg_names)
+            logger.error("  High B names: %s", self._high_b_names)
             logger.error("  Enhanced names count: %d", len(enhanced_names))
             raise ValueError(
                 f"Duplicate feature names generated: {list(duplicates.keys())}"
@@ -798,7 +798,7 @@ class SpectralFeatureGenerator(BaseEstimator, TransformerMixin):
 
         features.update(
             {
-                "Mg_C_ratio": kc_ratio,
+                "B_C_ratio": kc_ratio,
                 "KC_ratio_squared": kc_ratio**2 if not np.isnan(kc_ratio) else np.nan,
                 "KC_ratio_cubic": kc_ratio**3 if not np.isnan(kc_ratio) else np.nan,
                 "KC_ratio_log": np.log1p(np.abs(kc_ratio))
@@ -869,7 +869,7 @@ def create_feature_pipeline(
     
     Args:
         config: Pipeline configuration
-        strategy: Feature strategy ('Mg_only', 'simple_only', 'full_context')
+        strategy: Feature strategy ('B_only', 'simple_only', 'full_context')
         exclude_scaler: Whether to exclude StandardScaler from pipeline
         use_parallel: Whether to use parallel processing for feature generation
         n_jobs: Number of parallel jobs (-1 for all cores, -2 for all but one)

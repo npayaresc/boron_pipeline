@@ -506,6 +506,70 @@ wheels = [
 ]
 
 [[package]]
+name = "boron-pipeline"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "autogluon" },
+    { name = "catboost" },
+    { name = "fastapi" },
+    { name = "google-cloud-aiplatform" },
+    { name = "google-cloud-compute" },
+    { name = "google-cloud-storage" },
+    { name = "ipykernel" },
+    { name = "lightgbm" },
+    { name = "matplotlib" },
+    { name = "openpyxl" },
+    { name = "optuna" },
+    { name = "pandas" },
+    { name = "pydantic" },
+    { name = "pytest" },
+    { name = "python-multipart" },
+    { name = "scikit-learn" },
+    { name = "seaborn" },
+    { name = "shap" },
+    { name = "torch" },
+    { name = "uvicorn", extra = ["standard"] },
+    { name = "xgboost" },
+]
+
+[package.optional-dependencies]
+gpu = [
+    { name = "catboost" },
+    { name = "torch" },
+    { name = "xgboost" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "autogluon", specifier = ">=1.4.0" },
+    { name = "catboost", specifier = ">=1.2.8" },
+    { name = "catboost", marker = "extra == 'gpu'", specifier = ">=1.2.8" },
+    { name = "fastapi", specifier = ">=0.100.0" },
+    { name = "google-cloud-aiplatform", specifier = ">=1.111.0" },
+    { name = "google-cloud-compute", specifier = ">=1.36.0" },
+    { name = "google-cloud-storage", specifier = ">=2.19.0" },
+    { name = "ipykernel", specifier = ">=7.0.0a1" },
+    { name = "lightgbm", specifier = ">=4.6.0" },
+    { name = "matplotlib", specifier = ">=3.10.3" },
+    { name = "openpyxl", specifier = ">=3.1.5" },
+    { name = "optuna", specifier = ">=4.4.0" },
+    { name = "pandas", specifier = ">=2.3.1" },
+    { name = "pydantic", specifier = ">=2.11.7" },
+    { name = "pytest", specifier = ">=8.4.2" },
+    { name = "python-multipart", specifier = ">=0.0.6" },
+    { name = "scikit-learn", specifier = ">=1.7.1" },
+    { name = "seaborn", specifier = ">=0.13.2" },
+    { name = "shap", specifier = ">=0.45.0" },
+    { name = "torch", specifier = ">=2.0.0" },
+    { name = "torch", marker = "extra == 'gpu'", specifier = ">=2.0.0" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.20.0" },
+    { name = "xgboost", specifier = ">=3.0.2" },
+    { name = "xgboost", marker = "extra == 'gpu'", specifier = ">=3.0.2" },
+]
+provides-extras = ["gpu"]
+
+[[package]]
 name = "boto3"
 version = "1.40.48"
 source = { registry = "https://pypi.org/simple" }
@@ -2177,70 +2241,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/3a/05/a1dae3dffd1116099
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl", hash = "sha256:31a33c10c8e1e10422bfd431aeb5d351c7cf7fa671e3c4df004162264b28220c", size = 61595, upload-time = "2024-12-06T11:20:54.538Z" },
 ]
-
-[[package]]
-name = "magnesium-pipeline"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "autogluon" },
-    { name = "catboost" },
-    { name = "fastapi" },
-    { name = "google-cloud-aiplatform" },
-    { name = "google-cloud-compute" },
-    { name = "google-cloud-storage" },
-    { name = "ipykernel" },
-    { name = "lightgbm" },
-    { name = "matplotlib" },
-    { name = "openpyxl" },
-    { name = "optuna" },
-    { name = "pandas" },
-    { name = "pydantic" },
-    { name = "pytest" },
-    { name = "python-multipart" },
-    { name = "scikit-learn" },
-    { name = "seaborn" },
-    { name = "shap" },
-    { name = "torch" },
-    { name = "uvicorn", extra = ["standard"] },
-    { name = "xgboost" },
-]
-
-[package.optional-dependencies]
-gpu = [
-    { name = "catboost" },
-    { name = "torch" },
-    { name = "xgboost" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "autogluon", specifier = ">=1.4.0" },
-    { name = "catboost", specifier = ">=1.2.8" },
-    { name = "catboost", marker = "extra == 'gpu'", specifier = ">=1.2.8" },
-    { name = "fastapi", specifier = ">=0.100.0" },
-    { name = "google-cloud-aiplatform", specifier = ">=1.111.0" },
-    { name = "google-cloud-compute", specifier = ">=1.36.0" },
-    { name = "google-cloud-storage", specifier = ">=2.19.0" },
-    { name = "ipykernel", specifier = ">=7.0.0a1" },
-    { name = "lightgbm", specifier = ">=4.6.0" },
-    { name = "matplotlib", specifier = ">=3.10.3" },
-    { name = "openpyxl", specifier = ">=3.1.5" },
-    { name = "optuna", specifier = ">=4.4.0" },
-    { name = "pandas", specifier = ">=2.3.1" },
-    { name = "pydantic", specifier = ">=2.11.7" },
-    { name = "pytest", specifier = ">=8.4.2" },
-    { name = "python-multipart", specifier = ">=0.0.6" },
-    { name = "scikit-learn", specifier = ">=1.7.1" },
-    { name = "seaborn", specifier = ">=0.13.2" },
-    { name = "shap", specifier = ">=0.45.0" },
-    { name = "torch", specifier = ">=2.0.0" },
-    { name = "torch", marker = "extra == 'gpu'", specifier = ">=2.0.0" },
-    { name = "uvicorn", extras = ["standard"], specifier = ">=0.20.0" },
-    { name = "xgboost", specifier = ">=3.0.2" },
-    { name = "xgboost", marker = "extra == 'gpu'", specifier = ">=3.0.2" },
-]
-provides-extras = ["gpu"]
 
 [[package]]
 name = "mako"

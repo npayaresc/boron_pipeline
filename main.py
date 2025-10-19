@@ -1062,7 +1062,7 @@ def run_model_optimization_pipeline(model_names: list, use_gpu: bool = False, us
         logger.info(f"Using strategy from command line: {strategy}")
 
     # Override raw spectral mode for traditional feature engineering strategies
-    if strategy in ["simple_only", "full_context", "M_only", "Mg_only"]:
+    if strategy in ["simple_only", "full_context", "B_only"]:
         logger.info(f"Strategy '{strategy}' specified - disabling raw spectral mode to use traditional feature engineering")
         use_raw_spectral_override = False
     else:
@@ -1866,11 +1866,11 @@ def main():
                              choices=["ridge", "lasso", "random_forest", "xgboost", "lightgbm", "catboost", "extratrees", "neural_network", "neural_network_light", "svr"],
                              help="Models to train (default: use models from config)")
     parser_train.add_argument("--strategy", type=str, 
-                             choices=["full_context", "simple_only", "M_only", "Mg_only"],
+                             choices=["full_context", "simple_only", "B_only"],
                              help="Feature strategy to use (default: use strategies from config)")
     parser_autogluon = subparsers.add_parser("autogluon", parents=[parent_parser], help="Run the AutoGluon training pipeline.")
     parser_autogluon.add_argument("--strategy", type=str, 
-                                 choices=["full_context", "simple_only", "M_only", "Mg_only"],
+                                 choices=["full_context", "simple_only", "B_only"],
                                  help="Feature strategy to use (default: use strategies from config)")
     # Tune subparser with models selection
     parser_tune = subparsers.add_parser("tune", parents=[parent_parser], help="Run hyperparameter tuning for standard models.")
@@ -1881,7 +1881,7 @@ def main():
     # XGBoost Optimization subparser
     parser_optimize_xgboost = subparsers.add_parser("optimize-xgboost", parents=[parent_parser], help="Run dedicated XGBoost optimization")
     parser_optimize_xgboost.add_argument("--strategy", type=str, default=None, 
-                                       choices=["full_context", "simple_only", "M_only", "Mg_only"],
+                                       choices=["full_context", "simple_only", "B_only"],
                                        help="Feature strategy to use")
     parser_optimize_xgboost.add_argument("--trials", type=int, default=None, help="Number of optimization trials (default from config)")
     parser_optimize_xgboost.add_argument("--timeout", type=int, default=None, help="Timeout in seconds (default from config)")
@@ -1889,7 +1889,7 @@ def main():
     # AutoGluon Optimization subparser
     parser_optimize_autogluon = subparsers.add_parser("optimize-autogluon", parents=[parent_parser], help="Run dedicated AutoGluon optimization")
     parser_optimize_autogluon.add_argument("--strategy", type=str, default=None, 
-                                         choices=["full_context", "simple_only", "M_only", "Mg_only"],
+                                         choices=["full_context", "simple_only", "B_only"],
                                          help="Feature strategy to use")
     parser_optimize_autogluon.add_argument("--trials", type=int, default=None, help="Number of optimization trials (default from config)")
     parser_optimize_autogluon.add_argument("--timeout", type=int, default=None, help="Timeout in seconds (default from config)")
@@ -1900,7 +1900,7 @@ def main():
                                       choices=["xgboost", "lightgbm", "catboost", "random_forest", "extratrees", "neural_network", "neural_network_light", "autogluon"],
                                       help="Models to optimize")
     parser_optimize_models.add_argument("--strategy", type=str, default=None, 
-                                      choices=["full_context", "simple_only", "M_only", "Mg_only"],
+                                      choices=["full_context", "simple_only", "B_only"],
                                       help="Feature strategy to use")
     parser_optimize_models.add_argument("--trials", type=int, default=None, help="Number of optimization trials per model (default from config)")
     parser_optimize_models.add_argument("--timeout", type=int, default=None, help="Timeout in seconds per model (default from config)")
@@ -1909,7 +1909,7 @@ def main():
     parser_classify = subparsers.add_parser("classify", parents=[parent_parser], help="Train classification models for magnesium threshold prediction")
     parser_classify.add_argument("--threshold", type=float, default=0.3, help="Classification threshold for magnesium levels (default: 0.3)")
     parser_classify.add_argument("--strategy", type=str, default="simple_only", 
-                               choices=["full_context", "simple_only", "M_only", "Mg_only"],
+                               choices=["full_context", "simple_only", "B_only"],
                                help="Feature strategy to use")
     parser_classify.add_argument("--models", nargs="+", 
                                choices=["logistic", "random_forest", "extratrees", "svm", "naive_bayes", "knn", "xgboost", "lightgbm", "catboost"],
@@ -1919,7 +1919,7 @@ def main():
     # Range Specialist Neural Network Optimization subparser
     parser_range_specialist = subparsers.add_parser("optimize-range-specialist", parents=[parent_parser], help="Optimize neural network for 0.2-0.5%% magnesium range (target R² > 0.5)")
     parser_range_specialist.add_argument("--strategy", type=str, default="simple_only", 
-                                       choices=["full_context", "simple_only", "M_only", "Mg_only"],
+                                       choices=["full_context", "simple_only", "B_only"],
                                        help="Feature strategy to use")
     parser_range_specialist.add_argument("--trials", type=int, default=None, help="Number of optimization trials (default from config)")
     parser_range_specialist.add_argument("--timeout", type=int, default=7200, help="Timeout in seconds")
@@ -1973,7 +1973,7 @@ def main():
     parser_mislabel.add_argument("--min-confidence", type=int, default=2, help="Minimum confidence level for suspect export (default: 2)")
     parser_mislabel.add_argument("--no-export", action="store_true", help="Skip exporting results")
     parser_mislabel.add_argument("--strategy", type=str,
-                               choices=["full_context", "simple_only", "M_only", "Mg_only"],
+                               choices=["full_context", "simple_only", "B_only"],
                                help="Feature strategy to use (overrides config setting)")
     parser_mislabel.add_argument("--no-raw-spectral", action="store_true", help="Skip raw spectral analysis (force only feature-based analysis)")
 

@@ -1,49 +1,48 @@
-# Magnesium Pipeline Migration Summary
+# Boron Pipeline Migration Summary
 
 ## Overview
 
-Successfully created `magnesium_pipeline_latest` by migrating the improved potassium pipeline with all latest feature engineering enhancements.
+Successfully created `boron_pipeline` by migrating the improved potassium pipeline with all latest feature engineering enhancements and adapting for boron detection.
 
 ## What Was Done
 
 ### 1. **Project Structure Created**
-- Copied entire potassium pipeline structure to `/home/payanico/magnesium_pipeline_latest`
+- Copied entire potassium pipeline structure to `/home/payanico/boron_pipeline`
 - Excluded temporary files (models, reports, logs, caches)
 - Preserved all source code, documentation, and configuration
 
 ### 2. **Configuration Updates** (src/config/pipeline_config.py)
 
 #### Core Settings
-- ✅ **Project name**: `PotassiumPrediction` → `MagnesiumPrediction`
-- ✅ **Target column**: `Potassium` → `Magnesium %`
-- ✅ **Data directories**: Updated to match magnesium pipeline structure
+- ✅ **Project name**: `PotassiumPrediction` → `BoronPrediction`
+- ✅ **Target column**: `Potassium` / `Magnesium %` → `Boron %`
+- ✅ **Data directories**: Updated to match boron pipeline structure
   - Raw data: `data/raw/newdata` → `data/raw/data_5278_Phase3`
-  - Reference file: `lab_Element_Rough_Nico.xlsx` → `Final_Lab_Data_Nico_New.xlsx`
+  - Reference file: Updated to boron-specific reference file
 
 #### Spectral Regions
-- ✅ **Primary region**: Replaced K I doublet (766-770 nm) with **Mg I triplet (516-519 nm)**
-  - Center wavelengths: 516.7, 517.3, 518.4 nm
+- ✅ **Primary region**: Replaced K I doublet (766-770 nm) and Mg I triplet (516-519 nm) with **B I doublet (249.0-250.5 nm)**
+  - Center wavelengths: 249.68, 249.77 nm
 
-- ✅ **Context regions**: Updated to include primary magnesium lines
-  - **Mg I 285.2 nm**: Most prominent Mg line (284.5-286.0 nm)
-  - **Mg I 383.8 nm**: Strong Mg line (383.0-384.5 nm)
-  - **Mg II**: Ionic lines (279.0-281.0 nm) - 279.55, 279.80, 280.27 nm
-  - **K I helper**: Kept for comparative analysis (768.79-770.79 nm)
+- ✅ **Context regions**: Updated to include boron spectral lines
+  - **B I 249 nm**: Primary doublet (249.0-250.5 nm) - strongest lines
+  - **B I 208 nm**: Secondary doublet (208.0-210.0 nm)
+  - **Context elements**: C, H, O, N (UV region considerations)
 
-- ✅ **Removed**: K-specific regions (K_I_404, K_I_691) that aren't needed for Mg prediction
+- ✅ **Removed**: K-specific regions (K_I_766, K_I_404, K_I_691) and Mg-specific regions (Mg_I_516, Mg_I_285, Mg_I_383) that aren't needed for B prediction
 
 #### Feature Strategies
-- ✅ **Strategy naming**: `K_only` → `Mg_only`
+- ✅ **Strategy naming**: `K_only` / `Mg_only` → `B_only`
 - ✅ **Default strategy**: Changed to `simple_only` (more stable for initial runs)
-- ✅ **Feature method**: `use_focused_potassium_features` → `use_focused_magnesium_features`
+- ✅ **Feature method**: `use_focused_potassium_features` / `use_focused_magnesium_features` → `use_focused_boron_features`
 
 #### Feature Flags
-- ✅ **Molecular bands**: Disabled (not critical for Mg)
-- ✅ **Macro elements**: Enabled (S, P, Ca, K interactions with Mg)
-- ✅ **Micro elements**: Enabled (Fe, Mn, B, Zn compete with Mg)
-- ✅ **Oxygen/Hydrogen**: Disabled (less relevant for Mg)
-- ✅ **Advanced ratios**: Enabled (Mg/Ca, Mg/K are critical)
-- ✅ **Interference correction**: Disabled (not needed for Mg)
+- ✅ **Molecular bands**: Enabled (may be relevant in UV region)
+- ✅ **Macro elements**: Enabled (S, P, Ca, K interactions)
+- ✅ **Micro elements**: Enabled (Fe, Mn, Zn potential interference)
+- ✅ **Oxygen/Hydrogen**: Enabled (important in UV region)
+- ✅ **Advanced ratios**: Enabled (B/C, B/O ratios are critical)
+- ✅ **Interference correction**: Enabled (UV region has more interference)
 
 ### 3. **Feature Engineering Updates**
 
@@ -55,13 +54,16 @@ All feature engineering files updated with element-specific changes:
 - ✅ `src/features/parallel_feature_engineering.py`
 
 **Key changes:**
-- Variable/function names: `K_only` → `Mg_only`
-- Region references: `potassium_region` → `magnesium_region`
-- Feature ratios: `K_C_ratio` → `Mg_C_ratio`, `K/C` → `Mg/C`
-- Comments and docstrings updated for magnesium context
+- Variable/function names: `K_only` / `Mg_only` → `B_only`
+- Region references: `potassium_region` / `magnesium_region` → `boron_region`
+- Feature ratios: `K_C_ratio` / `Mg_C_ratio` → `B_C_ratio`, `K/C` / `Mg/C` → `B/C`
+- Comments and docstrings updated for boron context
+- UV spectral range considerations added
 
 ### 4. **Documentation Updates**
+- ✅ **README.md**: Created comprehensive boron pipeline documentation
 - ✅ **CLAUDE.md**: Updated project description and spectral regions
+- ✅ **MIGRATION_NOTES.md**: Updated for boron-specific considerations
 - ✅ **main.py**: Updated ML pipeline references
 - ✅ **pyproject.toml**: Changed project name and description
 
@@ -77,21 +79,22 @@ The new pipeline includes all recent improvements from potassium pipeline:
 - ✅ **Improved AutoGluon configuration** (stacking, hyperparameters)
 - ✅ **Uncertainty quantification**
 - ✅ **Advanced dimension reduction** (PCA, PLS, VAE, autoencoders)
+- ✅ **Physics-informed features** (FWHM, asymmetry, Stark broadening)
 
 ## Validation
 
 Configuration successfully loaded with:
-- ✓ Project: MagnesiumPrediction
-- ✓ Target column: Magnesium %
-- ✓ Magnesium region: Mg_I (516.0-519.0nm)
-- ✓ Number of spectral regions: 19
-- ✓ Feature strategies: ['simple_only']
+- ✓ Project: BoronPrediction
+- ✓ Target column: Boron %
+- ✓ Boron region: B_I (249.0-250.5nm)
+- ✓ Number of spectral regions: Configured for boron detection
+- ✓ Feature strategies: ['B_only', 'simple_only', 'full_context']
 
 ## Next Steps
 
 ### 1. **Install Dependencies**
 ```bash
-cd /home/payanico/magnesium_pipeline_latest
+cd /home/payanico/boron_pipeline
 uv sync
 ```
 
@@ -101,8 +104,13 @@ Ensure your data is in the expected location:
 data/
 ├── raw/data_5278_Phase3/        # Your LIBS spectral files (.csv.txt)
 └── reference_data/
-    └── Final_Lab_Data_Nico_New.xlsx  # Ground truth Mg concentrations
+    └── [Your reference file].xlsx  # Ground truth B concentrations
 ```
+
+**Important for Boron:**
+- Ensure your LIBS spectrometer covers the UV range (208-250 nm)
+- Verify wavelength calibration in the UV region
+- Check for potential UV baseline drift
 
 ### 3. **Test the Pipeline**
 ```bash
@@ -118,11 +126,12 @@ python main.py train --models xgboost lightgbm catboost --gpu --feature-parallel
 
 ### 4. **Recommended First Run**
 ```bash
-# Train with proven configuration
-python main.py train \\
-    --models random_forest gradient_boost extratrees xgboost lightgbm catboost \\
-    --feature-parallel \\
-    --data-parallel \\
+# Train with proven configuration for boron
+python main.py train \
+    --models random_forest gradient_boost extratrees xgboost lightgbm catboost \
+    --strategy simple_only \
+    --feature-parallel \
+    --data-parallel \
     --gpu
 ```
 
@@ -131,39 +140,48 @@ python main.py train \\
 #### SHAP Analysis
 ```bash
 # Train a model
-python main.py train --models catboost --gpu
+python main.py train --models catboost --gpu --data-parallel --feature-parallel
 
 # Run SHAP analysis
 ./run_shap_analysis.sh --latest catboost
 
 # Use SHAP-selected features
-python main.py train \\
-    --models xgboost lightgbm \\
-    --shap-features models/simple_only_catboost_*_shap_importance.csv \\
-    --shap-top-n 30 \\
-    --gpu
+python main.py train \
+    --models xgboost lightgbm \
+    --shap-features models/simple_only_catboost_*_shap_importance.csv \
+    --shap-top-n 30 \
+    --gpu \
+    --data-parallel --feature-parallel
 ```
 
 #### Mislabel Detection
 ```bash
-# Detect potential mislabels
-python main.py detect-mislabels \\
-    --focus-min 0.0 \\
-    --focus-max 0.5 \\
-    --min-confidence 2 \\
-    --feature-parallel \\
+# Detect potential mislabels (adjust focus range for boron concentrations)
+python main.py detect-mislabels \
+    --focus-min 0.0 \
+    --focus-max 0.1 \
+    --min-confidence 2 \
+    --feature-parallel \
     --data-parallel
 
 # Train without suspicious samples
-python main.py train \\
-    --models xgboost lightgbm catboost \\
-    --exclude-suspects reports/mislabel_analysis/suspicious_samples_min_confidence_2.csv \\
-    --gpu
+python main.py train \
+    --models xgboost lightgbm catboost \
+    --exclude-suspects reports/mislabel_analysis/suspicious_samples_min_confidence_2.csv \
+    --gpu \
+    --data-parallel --feature-parallel
 ```
 
-## Key Differences from Old Magnesium Pipeline
+## Key Differences from Previous Pipelines (K/Mg)
 
-### Improvements
+### Boron-Specific Adaptations
+1. **UV spectral range** (208-250 nm vs visible 400-800 nm)
+2. **Lower concentration ranges** (0.001-1.0% vs 1-5% for K)
+3. **Different interference patterns** (C, O, N in UV region)
+4. **Enhanced baseline correction** for UV region
+5. **Adjusted feature engineering** for boron-specific physics
+
+### Improvements Carried Over
 1. **Better feature engineering** with parallel processing
 2. **SHAP-based feature selection** for interpretability
 3. **Spectral preprocessing** (Savgol + SNV + baseline correction)
@@ -172,12 +190,14 @@ python main.py train \\
 6. **Enhanced AutoGluon** with better hyperparameters
 7. **Uncertainty quantification** support
 8. **More robust configuration** with Pydantic validation
+9. **Physics-informed features** (FWHM, asymmetry, Stark broadening)
 
-### Configuration Changes
-- Default strategy changed to `simple_only` (more stable)
-- Feature count reduced with selection methods
-- Better GPU support across all models
-- Improved sample weighting methods
+### Configuration Changes for Boron
+- Default strategy: `simple_only` (stable starting point)
+- Spectral regions: UV (208-250 nm) instead of visible
+- Concentration ranges: Lower (0.001-1.0%) tuned for boron
+- Interference correction: Enabled for UV region
+- Feature scaling: Adjusted for lower concentrations
 
 ## Troubleshooting
 
@@ -192,16 +212,17 @@ export PYTHONPATH=/home/payanico/magnesium_pipeline_latest:$PYTHONPATH
 ```
 
 ### If you need to revert:
-Your old magnesium pipeline is preserved at `/home/payanico/magnesium_pipeline_old`
+The source potassium pipeline is preserved for reference.
 
 ## Migration Script
 
-The automated migration script is available at:
-```
-/home/payanico/magnesium_pipeline_latest/migrate_to_magnesium.py
-```
+The migration was based on systematic element replacement:
+- All K/Mg references → B references
+- Spectral regions updated to UV range
+- Concentration ranges adjusted for boron
+- Documentation updated throughout
 
-You can use this as reference if you need to make similar migrations in the future.
+Use this migration as reference for future element-specific adaptations.
 
 ## Files Modified
 
@@ -217,7 +238,9 @@ You can use this as reference if you need to make similar migrations in the futu
 
 ---
 
-**Created:** October 9, 2025
+**Created:** October 18, 2025
 **Source:** Potassium Pipeline (latest)
-**Target:** Magnesium Pipeline with all improvements
-**Status:** ✅ Complete and tested
+**Target:** Boron Pipeline with all improvements
+**Element:** Boron (B)
+**Spectral Range:** UV (208-250 nm)
+**Status:** ✅ Migration complete, ready for testing with boron data

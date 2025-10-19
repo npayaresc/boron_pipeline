@@ -1,10 +1,10 @@
 # Cloud-Agnostic Deployment Guide
 
-This guide provides instructions for deploying the Magnesium Pipeline to various cloud platforms while maintaining cloud agnosticism.
+This guide provides instructions for deploying the Boron Pipeline to various cloud platforms while maintaining cloud agnosticism.
 
 ## Overview
 
-The Magnesium Pipeline is designed to be cloud-agnostic, using containerization and standardized APIs to ensure easy migration between cloud providers. The deployment strategy focuses on:
+The Boron Pipeline is designed to be cloud-agnostic, using containerization and standardized APIs to ensure easy migration between cloud providers. The deployment strategy focuses on:
 
 - **Docker containerization** for consistent environments
 - **RESTful API** for universal access
@@ -25,10 +25,10 @@ docker-compose --profile dev up
 ### Production Deployment
 ```bash
 # Build production image
-docker build --target production -t magnesium-pipeline:latest .
+docker build --target production -t boron-pipeline:latest .
 
 # Run with GPU support
-docker run --gpus all -p 8000:8000 magnesium-pipeline:latest
+docker run --gpus all -p 8000:8000 boron-pipeline:latest
 ```
 
 ## Deployment Options
@@ -38,11 +38,11 @@ docker run --gpus all -p 8000:8000 magnesium-pipeline:latest
 #### Option A: Cloud Run (Serverless)
 ```bash
 # Build and push to Container Registry
-gcloud builds submit --tag gcr.io/PROJECT_ID/magnesium-pipeline
+gcloud builds submit --tag gcr.io/PROJECT_ID/boron-pipeline
 
 # Deploy to Cloud Run with GPU (when available)
-gcloud run deploy magnesium-pipeline \
-  --image gcr.io/PROJECT_ID/magnesium-pipeline \
+gcloud run deploy boron-pipeline \
+  --image gcr.io/PROJECT_ID/boron-pipeline \
   --platform managed \
   --region us-central1 \
   --memory 8Gi \
@@ -57,20 +57,20 @@ gcloud run deploy magnesium-pipeline \
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: magnesium-pipeline
+  name: boron-pipeline
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: magnesium-pipeline
+      app: boron-pipeline
   template:
     metadata:
       labels:
-        app: magnesium-pipeline
+        app: boron-pipeline
     spec:
       containers:
-      - name: magnesium-pipeline
-        image: gcr.io/PROJECT_ID/magnesium-pipeline:latest
+      - name: boron-pipeline
+        image: gcr.io/PROJECT_ID/boron-pipeline:latest
         ports:
         - containerPort: 8000
         env:
@@ -90,7 +90,7 @@ spec:
       volumes:
       - name: data-volume
         persistentVolumeClaim:
-          claimName: magnesium-data-pvc
+          claimName: boron-data-pvc
       nodeSelector:
         accelerator: nvidia-tesla-t4
 ```
@@ -103,8 +103,8 @@ from google.cloud import aiplatform
 aiplatform.init(project="PROJECT_ID", location="us-central1")
 
 job = aiplatform.CustomContainerTrainingJob(
-    display_name="magnesium-pipeline-training",
-    container_uri="gcr.io/PROJECT_ID/magnesium-pipeline:latest",
+    display_name="boron-pipeline-training",
+    container_uri="gcr.io/PROJECT_ID/boron-pipeline:latest",
     command=["python", "main.py", "autogluon", "--gpu"],
     machine_type="n1-standard-4",
     accelerator_type="NVIDIA_TESLA_T4",
@@ -120,8 +120,8 @@ job.run()
 ```bash
 # Push to ECR
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ACCOUNT.dkr.ecr.us-east-1.amazonaws.com
-docker tag magnesium-pipeline:latest ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/magnesium-pipeline:latest
-docker push ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/magnesium-pipeline:latest
+docker tag boron-pipeline:latest ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/boron-pipeline:latest
+docker push ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/boron-pipeline:latest
 
 # Create ECS service (use AWS Console or CLI)
 ```
@@ -132,13 +132,13 @@ docker push ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/magnesium-pipeline:latest
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: magnesium-pipeline
+  name: boron-pipeline
 spec:
   template:
     spec:
       containers:
-      - name: magnesium-pipeline
-        image: ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/magnesium-pipeline:latest
+      - name: boron-pipeline
+        image: ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/boron-pipeline:latest
         env:
         - name: STORAGE_TYPE
           value: "s3"
@@ -153,7 +153,7 @@ import boto3
 from sagemaker.pytorch import PyTorchModel
 
 model = PyTorchModel(
-    image_uri="ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/magnesium-pipeline:latest",
+    image_uri="ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/boron-pipeline:latest",
     role="SageMakerExecutionRole",
     entry_point="api_server.py"
 )
@@ -170,9 +170,9 @@ predictor = model.deploy(
 ```bash
 # Create container instance
 az container create \
-  --resource-group magnesium-rg \
-  --name magnesium-pipeline \
-  --image magnesium-pipeline:latest \
+  --resource-group boron-rg \
+  --name boron-pipeline \
+  --image boron-pipeline:latest \
   --cpu 4 \
   --memory 8 \
   --gpu-count 1 \
@@ -187,13 +187,13 @@ az container create \
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: magnesium-pipeline
+  name: boron-pipeline
 spec:
   template:
     spec:
       containers:
-      - name: magnesium-pipeline
-        image: your-registry.azurecr.io/magnesium-pipeline:latest
+      - name: boron-pipeline
+        image: your-registry.azurecr.io/boron-pipeline:latest
         env:
         - name: STORAGE_TYPE
           value: "azure"
@@ -205,7 +205,7 @@ spec:
 ```yaml
 # helm/values.yaml
 image:
-  repository: magnesium-pipeline
+  repository: boron-pipeline
   tag: latest
   pullPolicy: IfNotPresent
 
@@ -226,11 +226,11 @@ service:
 ingress:
   enabled: true
   hosts:
-    - magnesium-api.yourdomain.com
+    - boron-api.yourdomain.com
 ```
 
 ```bash
-helm install magnesium-pipeline ./helm
+helm install boron-pipeline ./helm
 ```
 
 ## Configuration Management
@@ -263,7 +263,7 @@ export API_KEY="your-secure-api-key"
 # config/gcp.yml
 storage:
   type: gcs
-  bucket_name: magnesium-pipeline-data
+  bucket_name: boron-pipeline-data
   credentials_path: /var/secrets/google/key.json
 
 compute:
@@ -281,7 +281,7 @@ cloud_providers:
 # config/aws.yml
 storage:
   type: s3
-  bucket_name: magnesium-pipeline-data
+  bucket_name: boron-pipeline-data
   
 compute:
   gpu_enabled: true
@@ -354,7 +354,7 @@ RUN useradd --create-home --shell /bin/bash appuser
 USER appuser
 
 # Scan for vulnerabilities
-# docker scan magnesium-pipeline:latest
+# docker scan boron-pipeline:latest
 ```
 
 ### 3. Secrets Management
@@ -368,7 +368,7 @@ USER appuser
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: magnesium-pipeline-role
+  name: boron-pipeline-role
 rules:
 - apiGroups: [""]
   resources: ["pods", "configmaps"]
@@ -383,12 +383,12 @@ rules:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: magnesium-pipeline-hpa
+  name: boron-pipeline-hpa
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: magnesium-pipeline
+    name: boron-pipeline
   minReplicas: 1
   maxReplicas: 10
   metrics:
@@ -450,13 +450,13 @@ aws s3 sync s3://source-bucket azure-blob-destination
 #### GPU Not Detected
 ```bash
 # Check GPU availability in container
-docker run --gpus all magnesium-pipeline:latest python check_gpu_support.py
+docker run --gpus all boron-pipeline:latest python check_gpu_support.py
 ```
 
 #### Storage Access Issues
 ```bash
 # Check storage permissions
-kubectl logs magnesium-pipeline-pod
+kubectl logs boron-pipeline-pod
 
 # Test storage connectivity
 curl -X POST "https://api-endpoint/health"
@@ -472,7 +472,7 @@ docker stats
 ### Debug Mode
 ```bash
 # Run in debug mode
-docker run -e LOG_LEVEL=DEBUG magnesium-pipeline:latest
+docker run -e LOG_LEVEL=DEBUG boron-pipeline:latest
 ```
 
 ## Support

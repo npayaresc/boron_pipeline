@@ -1,5 +1,5 @@
 """
-Centralized Configuration Management for the Magnesium Prediction ML Pipeline.
+Centralized Configuration Management for the Boron Prediction ML Pipeline.
 
 Uses Pydantic for data validation and clear structure.
 """
@@ -544,7 +544,7 @@ class AutoGluonConfig(BaseModel):
 
 class Config(BaseModel):
     """Main configuration class for the entire pipeline."""
-    project_name: str = "MagnesiumPrediction"
+    project_name: str = "BoronPrediction"
     run_timestamp: str
     random_state: int = 42
     use_gpu: bool = False  # Global GPU flag
@@ -562,19 +562,20 @@ class Config(BaseModel):
 
     _reference_data_path: str
     
+    
+    ##  B 249.677 (wt%)
     # --- Data Management ---
-    target_column: str = "Mg 285.213\n(wt%)"  # Note: Excel file has newline in column name
+    target_column: str = "B 249.677\n(wt%)"  # Boron concentration column in reference file
     sample_id_column: str = "Sample ID"
     exclude_pot_samples: bool = False
     test_split_size: float = 0.20
     max_samples: Optional[int] = None
+
+    # ADDED: Configuration for target value filtering - realistic B concentra5tion range
+    target_value_min: Optional[float] = 15.0  # Minimum valid B concentration (boron is typically trace element)
+    target_value_max: Optional[float] = 35.0 # Maximum valid B concentration (typical range 0.001-1.0%)
     
-    # ADDED: Configuration for target value filtering - realistic Mg concentration range
-    target_value_min: Optional[float] = 0.5  # Minimum valid Mg concentration (exclude zeros and extreme outliers)
-    target_value_max: Optional[float] = 5.0   # Maximum valid Mg concentration (exclude extreme outliers like 999 billion)
-    
-    # Custom validation set directory - if providedone, will process raw files from this directory for validation
-    #custom_validation_dir: Optional[str] = "/home/payanico/magnesium_pipeline/data/raw/combo_6_8"
+    # Custom validation set directory - if provided, will process raw files from this directory for validation
     custom_validation_dir: Optional[str] = None
 
     # Wavelength standardization configuration
@@ -585,7 +586,7 @@ class Config(BaseModel):
     # Feature Selection Configuration - to handle high-dimension/low-sample scenario
     use_feature_selection: bool = True # Enable/disable feature selection
     feature_selection_method: Literal['selectkbest', 'rfe', 'lasso', 'mutual_info', 'tree_importance'] = 'selectkbest'
-    n_features_to_select: Union[int, float] = 0.20 # Number of features to select (int) or fraction (float < 1.0)
+    n_features_to_select: Union[int, float] = 0.40 # Number of features to select (int) or fraction (float < 1.0)
     feature_selection_score_func: Literal['f_regression', 'mutual_info_regression'] = 'f_regression'
     # For SelectKBest
     rfe_estimator: Literal['random_forest', 'xgboost', 'lightgbm'] = 'random_forest'  # For RFE
@@ -594,7 +595,7 @@ class Config(BaseModel):
 
     # SHAP-Based Feature Selection (overrides use_feature_selection if enabled)
     use_shap_feature_selection: bool = False  # Enable SHAP-based feature selection
-    shap_importance_file: Optional[str] = None  # Path to SHAP importance CSV file (e.g., "models/Mg_only_catboost_*_shap_importance.csv" or "models/simple_only_lightgbm_*_shap_importance.csv")
+    shap_importance_file: Optional[str] = None  # Path to SHAP importance CSV file (e.g., "models/B_only_catboost_*_shap_importance.csv" or "models/simple_only_lightgbm_*_shap_importance.csv")
     shap_top_n_features: int = 40  # Number of top features to select based on SHAP importance
     shap_min_importance: Optional[float] = None  # Minimum SHAP importance threshold (optional)
 
@@ -614,47 +615,52 @@ class Config(BaseModel):
             raise ValueError("outlier_method must be 'SAM' or 'MAD'")
         return v.upper()
 
-    # Literature-verified Magnesium LIBS spectral lines:
+    # Literature-verified Boron LIBS spectral lines:
     # According to NIST and LIBS literature:
-    # - 285.2 nm: Most prominent Mg I line (resonance line)
-    # - 383.8 nm: Strong Mg I line
-    # - 516.7-518.4 nm: Mg I triplet (516.7, 517.3, 518.4 nm)
-    # - 279.5-280.3 nm: Mg II ionic lines (279.55, 279.80, 280.27 nm)
+    # - 249.677-249.773 nm: B I doublet (STRONGEST lines, prone to self-absorption at high concentrations)
+    # - 208.893-208.959 nm: B I doublet (secondary lines, less prone to self-absorption)
+    # - 345.128 nm: B II ionic line (useful for plasma temperature indication)
+    # Note: Boron has limited emission lines in UV-VIS range, making quantification challenging
+    # Self-absorption effects are significant in the 249.7 nm doublet above ~0.1% concentration
 
-    # Primary magnesium region - Mg I triplet around 517 nm
-    magnesium_region: PeakRegion = PeakRegion(
-        element="Mg_I", lower_wavelength=516.0, upper_wavelength=519.0, center_wavelengths=[516.7, 517.3, 518.4])
+    # Primary boron region - B I doublet around 249.7 nm (strongest lines)
+    boron_region: PeakRegion = PeakRegion(
+        element="B_I_249", lower_wavelength=248.5, upper_wavelength=250.8, center_wavelengths=[249.677, 249.773])
     
     
     context_regions: List[PeakRegion] = [
+        # Carbon line - important for UV region baseline and B/C ratio
         PeakRegion(element="C_I", lower_wavelength=832.5, upper_wavelength=834.5, center_wavelengths=[833.5]),
         # Calcium lines - Ca I 422.673 nm is the strongest Ca I line (NIST-verified for plant LIBS)
         PeakRegion(element="CA_I_422", lower_wavelength=422.0, upper_wavelength=423.5, center_wavelengths=[422.673]),
         PeakRegion(element="CA_II_393", lower_wavelength=392.5, upper_wavelength=394.5, center_wavelengths=[393.37]),
+        # Nitrogen line - important in UV region for potential interference
         PeakRegion(element="N_I_help", lower_wavelength=741.0, upper_wavelength=743.0, center_wavelengths=[742.0]),
 
-        # Primary magnesium spectral lines (target element for prediction)
-        PeakRegion(element="Mg_I_285", lower_wavelength=282.5, upper_wavelength=287.5, center_wavelengths=[285.2]),  # WIDENED: 1.5→5.0 nm (was too narrow for FWHM calculation)
-        PeakRegion(element="Mg_I_383", lower_wavelength=383.0, upper_wavelength=384.5, center_wavelengths=[383.8]),
-        PeakRegion(element="Mg_II", lower_wavelength=277.0, upper_wavelength=282.0, center_wavelengths=[279.55, 279.80, 280.27]),  # WIDENED: 2.0→5.0 nm (was too narrow for FWHM calculation)
+        # Secondary boron region - B I doublet at 208.9 nm (less prone to self-absorption)
+        PeakRegion(element="B_I_208", lower_wavelength=207.8, upper_wavelength=210.0, center_wavelengths=[208.893, 208.959]),
 
-        # Potassium reference lines for comparative analysis and context (NOT the prediction target)
-        # Primary K I doublet at 766.49 and 769.90 nm - strongest K lines
+        # Ionized boron line - B II at 345.1 nm (useful for plasma characterization)
+        PeakRegion(element="B_II_345", lower_wavelength=344.0, upper_wavelength=346.3, center_wavelengths=[345.128]),
+
+        # Potassium and Magnesium reference lines for comparative analysis and context
         PeakRegion(element="K_I", lower_wavelength=765.5, upper_wavelength=771.0, center_wavelengths=[766.49, 769.90]),
-        # Secondary K line for additional context
-        PeakRegion(element="K_I_help", lower_wavelength=768.79, upper_wavelength=770.79, center_wavelengths=[769.79]),
+        PeakRegion(element="Mg_I_285", lower_wavelength=282.5, upper_wavelength=287.5, center_wavelengths=[285.2]),
     ]
     
-    # Enhanced spectral regions for crop magnesium prediction
-    # Molecular bands (critical for organic matrix characterization in plant LIBS)
+    # Enhanced spectral regions for boron prediction
+    # Molecular bands (BO molecular emission can be useful for boron detection)
     molecular_bands: List[PeakRegion] = [
         # CN violet system - strong in all organic materials
         PeakRegion(element="CN_violet_1", lower_wavelength=385.0, upper_wavelength=390.0, center_wavelengths=[387.5]),
         PeakRegion(element="CN_violet_2", lower_wavelength=415.0, upper_wavelength=425.0, center_wavelengths=[420.0]),
-        # NH band at 336 nm - requires UV detection
+        # NH band at 336 nm - requires UV detection, relevant in UV region where B lines are
         PeakRegion(element="NH_band", lower_wavelength=335.0, upper_wavelength=338.0, center_wavelengths=[336.5]),
-        # NO γ-band at 236.3 nm - narrowed from 22nm to 3nm window (far UV, use only if UV capability exists)
+        # NO γ-band at 236.3 nm - in UV region near B lines (far UV, use only if UV capability exists)
         PeakRegion(element="NO_band", lower_wavelength=235.0, upper_wavelength=238.0, center_wavelengths=[236.3]),
+        # BO (boron monoxide) molecular emission - alternative detection method for boron
+        # Note: BO bands are complex, this is a representative region
+        PeakRegion(element="BO_molecular", lower_wavelength=429.0, upper_wavelength=434.0, center_wavelengths=[431.5]),
     ]
     
     # Additional macro elements
@@ -670,12 +676,12 @@ class Config(BaseModel):
         PeakRegion(element="K_I_404", lower_wavelength=402.0, upper_wavelength=407.0, center_wavelengths=[404.41, 404.72]),  # WIDENED: 2.0→5.0 nm for FWHM calculation
     ]
     
-    # Micro elements
+    # Micro elements (context elements for boron prediction)
     micro_elements: List[PeakRegion] = [
         PeakRegion(element="Fe_I", lower_wavelength=437.5, upper_wavelength=439.5, center_wavelengths=[438.4]),
         PeakRegion(element="Fe_I_2", lower_wavelength=439.5, upper_wavelength=441.5, center_wavelengths=[440.5]),
         PeakRegion(element="Mn_I", lower_wavelength=401.5, upper_wavelength=404.5, center_wavelengths=[403.08]),  # WIDENED: 0.8→3.0 nm (was too narrow for preprocessing)
-        PeakRegion(element="B_I", lower_wavelength=248.5, upper_wavelength=250.5, center_wavelengths=[249.8]),
+        # Note: Boron (B) regions are defined in boron_region and context_regions, not here
         PeakRegion(element="Zn_I", lower_wavelength=480.5, upper_wavelength=482.5, center_wavelengths=[481.1]),
         PeakRegion(element="Cu_I", lower_wavelength=323.5, upper_wavelength=325.5, center_wavelengths=[324.8]),
         PeakRegion(element="Mo_I", lower_wavelength=378.5, upper_wavelength=380.5, center_wavelengths=[379.8]),
@@ -689,18 +695,18 @@ class Config(BaseModel):
         PeakRegion(element="H_beta", lower_wavelength=485.0, upper_wavelength=487.0, center_wavelengths=[486.1]),
     ]
     
-    # Feature configuration flags - OPTIMIZED FOR MAGNESIUM
-    enable_molecular_bands: bool = False   # CN/NH/NO bands can indicate organic matter affecting Mg
-    enable_macro_elements: bool = True    # S, P, Ca, K - critical for Mg interactions
-    enable_micro_elements: bool = True    # Fe, Mn, B, Zn - compete with Mg uptake
-    enable_oxygen_hydrogen: bool = False   # H/O ratios affect Mg compounds
-    enable_advanced_ratios: bool = True   # Mg/Ca, Mg/K ratios are critical
-    enable_spectral_patterns: bool = True # Peak shapes help identify Mg compounds
-    enable_interference_correction: bool = False  # Fe/Mn can interfere with Mg lines
-    enable_plasma_indicators: bool = False  # Not needed for concentration prediction
-        
-    # Magnesium feature generation method
-    use_focused_magnesium_features: bool = True  # If True, uses focused features; if False, uses original features
+    # Feature configuration flags - OPTIMIZED FOR BORON
+    enable_molecular_bands: bool = True    # BO molecular emission and UV region molecules
+    enable_macro_elements: bool = True     # S, P, Ca, K - provide context for boron behavior
+    enable_micro_elements: bool = True     # Fe, Mn, Zn - potential interference in UV region
+    enable_oxygen_hydrogen: bool = True    # H/O important in UV region, BO formation
+    enable_advanced_ratios: bool = True    # B/C, B/O ratios are critical for boron
+    enable_spectral_patterns: bool = True  # Peak shapes critical for self-absorption detection
+    enable_interference_correction: bool = True  # UV region has more interference (C, O, N)
+    enable_plasma_indicators: bool = True  # B II line useful for plasma characterization
+
+    # Boron feature generation method
+    use_focused_boron_features: bool = True  # If True, uses focused boron features; if False, uses original features
     
     # Raw spectral data mode - pass filtered intensities directly to models without feature engineering
     use_raw_spectral_data: bool = False  # If True, use raw intensities from PeakRegions instead of engineered features
@@ -711,27 +717,27 @@ class Config(BaseModel):
 
     def get_regions_for_strategy(self, strategy: str) -> List[PeakRegion]:
         """Get spectral regions based on feature strategy."""
-        if strategy == "Mg_only" or strategy == "M_only":
-            # Only Mg regions + C for Mg_C_ratio
-            mg_regions = [self.magnesium_region]
-            mg_regions.extend([r for r in self.context_regions if r.element.startswith("Mg_I") or r.element.startswith("Mg_II")])
+        if strategy == "B_only":
+            # Only B regions + C for B_C_ratio
+            b_regions = [self.boron_region]
+            b_regions.extend([r for r in self.context_regions if r.element.startswith("B_I") or r.element.startswith("B_II")])
 
-            # Add K_I (potassium) as contextual information for magnesium prediction
-            # K features help improve magnesium prediction accuracy through elemental correlations
-            mg_regions.extend([r for r in self.context_regions if r.element.startswith("K_I")])
+            # Add K_I and Mg_I as contextual information for boron prediction
+            # These features help improve boron prediction accuracy through elemental correlations
+            b_regions.extend([r for r in self.context_regions if r.element.startswith("K_I") or r.element.startswith("Mg_I")])
 
-            # Add C_I for Mg_C_ratio calculation
+            # Add C_I for B_C_ratio calculation (critical for UV region)
             c_region = next((r for r in self.context_regions if r.element == "C_I"), None)
             if c_region:
-                mg_regions.append(c_region)
-            return mg_regions
+                b_regions.append(c_region)
+            return b_regions
         else:
             # Full regions for simple_only and full_context
             return self.all_regions
 
     @property
     def all_regions(self) -> List[PeakRegion]:
-        regions = [self.magnesium_region] + self.context_regions
+        regions = [self.boron_region] + self.context_regions
 
         # Add enabled enhanced regions
         if self.enable_molecular_bands:
@@ -745,8 +751,8 @@ class Config(BaseModel):
 
         return regions
 
-    #feature_strategies: List[str] = ["Mg_only", "simple_only", "full_context"]
-    feature_strategies: List[str] = ["M_only", "simple_only"]
+    #feature_strategies: List[str] = ["B_only", "simple_only", "full_context"]
+    feature_strategies: List[str] = ["B_only", "simple_only"]
     peak_shapes: List[str] = ['lorentzian']
     fitting_mode: str = 'mean_first'
     baseline_correction: bool = True

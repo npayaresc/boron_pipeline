@@ -2,7 +2,7 @@
 Feature Engineering Helper Functions
 
 This module contains the detailed logic for creating specific features,
-adapted from the original nitrogen_regression_model.py script for potassium prediction.
+adapted from the original nitrogen_regression_model.py script for boron prediction.
 """
 import logging
 import numpy as np
@@ -66,33 +66,33 @@ def extract_full_simple_features(
     
     return features
 
-def generate_high_magnesium_features(df: pd.DataFrame, simple_feature_names: List[str]) -> Tuple[pd.DataFrame, List[str]]:
+def generate_high_boron_features(df: pd.DataFrame, simple_feature_names: List[str]) -> Tuple[pd.DataFrame, List[str]]:
     """
-    Generates the full set of enhanced features for high magnesium detection.
+    Generates the full set of enhanced features for high boron detection.
     This logic is adapted from the original feature generation code.
-    Uses K (potassium) features as context for improved magnesium prediction.
+    Uses K (potassium) features as context for improved boron prediction.
     """
     df_out = df.copy()
     index_to_use = df_out.index if hasattr(df_out, 'index') else None
     enhanced_features = pd.DataFrame(index=index_to_use)
     enhanced_feature_names = []
-    
-    # Apply reasonable bounds to MgC_ratio to prevent extreme values
-    if 'Mg_C_ratio' not in df_out.columns:
-        raise ValueError("Mg_C_ratio not found in features. Ensure magnesium (Mg_I) and carbon (C_I) features are properly extracted.")
 
-    mgc_ratio_safe = df_out['Mg_C_ratio'].fillna(0.0)
+    # Apply reasonable bounds to B_C_ratio to prevent extreme values
+    if 'B_C_ratio' not in df_out.columns:
+        raise ValueError("B_C_ratio not found in features. Ensure boron (B_I) and carbon (C_I) features are properly extracted.")
+
+    bc_ratio_safe = df_out['B_C_ratio'].fillna(0.0)
     # Clip ratio to reasonable bounds (e.g., -50 to 50) to prevent corruption
-    mgc_ratio_clipped = np.clip(mgc_ratio_safe, -50.0, 50.0)
+    bc_ratio_clipped = np.clip(bc_ratio_safe, -50.0, 50.0)
 
-    enhanced_features['MgC_ratio_squared'] = mgc_ratio_clipped ** 2
-    enhanced_feature_names.append('MgC_ratio_squared')
-    enhanced_features['MgC_ratio_cubic'] = mgc_ratio_clipped ** 3
-    enhanced_feature_names.append('MgC_ratio_cubic')
-    enhanced_features['MgC_ratio_log'] = np.log1p(np.abs(mgc_ratio_clipped))
-    enhanced_feature_names.append('MgC_ratio_log')
-    
-    # K/C height ratio calculation (potassium/carbon - used as context for magnesium prediction)
+    enhanced_features['B_C_ratio_squared'] = bc_ratio_clipped ** 2
+    enhanced_feature_names.append('B_C_ratio_squared')
+    enhanced_features['B_C_ratio_cubic'] = bc_ratio_clipped ** 3
+    enhanced_feature_names.append('B_C_ratio_cubic')
+    enhanced_features['B_C_ratio_log'] = np.log1p(np.abs(bc_ratio_clipped))
+    enhanced_feature_names.append('B_C_ratio_log')
+
+    # K/C height ratio calculation (potassium/carbon - used as context for boron prediction)
     k_height_col = 'K_I_simple_peak_height'
     c_height_col = 'C_I_simple_peak_height'
     
@@ -149,34 +149,34 @@ def generate_high_magnesium_features(df: pd.DataFrame, simple_feature_names: Lis
             enhanced_features[f'K_{element}_ratio'] = ratio
             enhanced_feature_names.append(f'K_{element}_ratio')
 
-    logger.info(f"Generated {len(enhanced_feature_names)} high-magnesium features.")
+    logger.info(f"Generated {len(enhanced_feature_names)} high-boron features.")
     return pd.concat([df_out, enhanced_features], axis=1), enhanced_feature_names
 
-def generate_focused_magnesium_features(df: pd.DataFrame, simple_feature_names: List[str]) -> Tuple[pd.DataFrame, List[str]]:
+def generate_focused_boron_features(df: pd.DataFrame, simple_feature_names: List[str]) -> Tuple[pd.DataFrame, List[str]]:
     """
-    Generates a focused set of magnesium-specific features based on spectroscopic domain knowledge.
-    Only includes features directly relevant to magnesium detection and quantification.
-    Uses K (potassium) features as context for improved magnesium prediction.
+    Generates a focused set of boron-specific features based on spectroscopic domain knowledge.
+    Only includes features directly relevant to boron detection and quantification.
+    Uses K (potassium) features as context for improved boron prediction.
     """
     df_out = df.copy()
     index_to_use = df_out.index if hasattr(df_out, 'index') else None
     enhanced_features = pd.DataFrame(index=index_to_use)
     enhanced_feature_names = []
-    
-    # Mg/C ratio transformations - fundamental for magnesium analysis
-    if 'Mg_C_ratio' not in df_out.columns:
-        raise ValueError("Mg_C_ratio not found in features. Ensure magnesium (Mg_I) and carbon (C_I) features are properly extracted.")
 
-    mgc_ratio_safe = df_out['Mg_C_ratio'].fillna(0.0)
-    mgc_ratio_clipped = np.clip(mgc_ratio_safe, -50.0, 50.0)
+    # B/C ratio transformations - fundamental for boron analysis
+    if 'B_C_ratio' not in df_out.columns:
+        raise ValueError("B_C_ratio not found in features. Ensure boron (B_I) and carbon (C_I) features are properly extracted.")
 
-    # Non-linear transformations capture complex Mg-C relationships
-    enhanced_features['MgC_ratio_squared'] = mgc_ratio_clipped ** 2
-    enhanced_feature_names.append('MgC_ratio_squared')
-    enhanced_features['MgC_ratio_log'] = np.log1p(np.abs(mgc_ratio_clipped))
-    enhanced_feature_names.append('MgC_ratio_log')
-    
-    # K/C peak height ratio (potassium/carbon - used as context for magnesium prediction)
+    bc_ratio_safe = df_out['B_C_ratio'].fillna(0.0)
+    bc_ratio_clipped = np.clip(bc_ratio_safe, -50.0, 50.0)
+
+    # Non-linear transformations capture complex B-C relationships
+    enhanced_features['B_C_ratio_squared'] = bc_ratio_clipped ** 2
+    enhanced_feature_names.append('B_C_ratio_squared')
+    enhanced_features['B_C_ratio_log'] = np.log1p(np.abs(bc_ratio_clipped))
+    enhanced_feature_names.append('B_C_ratio_log')
+
+    # K/C peak height ratio (potassium/carbon - used as context for boron prediction)
     k_height_col = 'K_I_simple_peak_height'
     c_height_col = 'C_I_simple_peak_height'
     
@@ -210,19 +210,19 @@ def generate_focused_magnesium_features(df: pd.DataFrame, simple_feature_names: 
     if k_area_col not in df_out.columns:
         raise ValueError(f"{k_area_col} not found. Ensure potassium (K_I) features are properly extracted.")
     
-    # Key elements for K-based contextual features (potassium ratios help predict magnesium)
+    # Key elements for K-based contextual features (potassium ratios help predict boron)
     # Priority order based on agronomic importance and spectral relationships:
-    # 1. Ca and Mg - nutrient competition and balance indicators
+    # 1. Ca and B - nutrient competition and balance indicators
     # 2. P - important for nutrient balance assessment
     # 3. N - affects nutrient availability and uptake patterns
     # Note: We use the actual element names from PeakRegions
     key_elements = []
-    
-    # Always include Ca and Mg if available (strongest interference)
+
+    # Always include Ca and B if available (strongest interference)
     if 'CA_I_422_simple_peak_area' in df_out.columns:
         key_elements.append('CA_I_422')
-    if 'Mg_I_285_simple_peak_area' in df_out.columns:
-        key_elements.append('Mg_I_285')
+    if 'B_I_249_simple_peak_area' in df_out.columns:
+        key_elements.append('B_I_249')
     
     # Include P and N for nutrient balance ratios
     if 'P_I_secondary_simple_peak_area' in df_out.columns:
@@ -251,5 +251,5 @@ def generate_focused_magnesium_features(df: pd.DataFrame, simple_feature_names: 
                 enhanced_features[f'K_{element.split("_")[0]}_area_ratio'] = ratio
                 enhanced_feature_names.append(f'K_{element.split("_")[0]}_area_ratio')
     
-    logger.info(f"Generated {len(enhanced_feature_names)} focused magnesium features.")
+    logger.info(f"Generated {len(enhanced_feature_names)} focused boron features.")
     return pd.concat([df_out, enhanced_features], axis=1), enhanced_feature_names

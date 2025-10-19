@@ -16,21 +16,51 @@ logger = logging.getLogger(__name__)
 class MolecularBandDetector:
     """Detects and quantifies molecular band features in LIBS spectra."""
     
-    def detect_cn_bands(self, wavelengths: np.ndarray, intensities: np.ndarray, 
+    def detect_cn_bands(self, wavelengths: np.ndarray, intensities: np.ndarray,
                        band_ranges: List[Tuple[float, float]]) -> Dict[str, float]:
         """Detect CN molecular bands in specified wavelength ranges."""
         features = {}
-        
+
+        # Ensure arrays are numpy arrays
+        wavelengths = np.asarray(wavelengths)
+        intensities = np.asarray(intensities)
+
+        # Handle 2D intensities by taking mean across samples
+        if intensities.ndim == 2:
+            # If shape is (n_samples, n_wavelengths), take mean across samples
+            if intensities.shape[1] == len(wavelengths):
+                intensities = np.mean(intensities, axis=0)
+            # If shape is (n_wavelengths, n_samples), take mean across samples
+            elif intensities.shape[0] == len(wavelengths):
+                intensities = np.mean(intensities, axis=1)
+            else:
+                # Shape mismatch - return NaN features
+                for i in range(len(band_ranges)):
+                    features[f'CN_band_{i}_intensity'] = np.nan
+                    features[f'CN_band_{i}_area'] = np.nan
+                    features[f'CN_band_{i}_n_peaks'] = 0
+                return features
+
         for i, (lower, upper) in enumerate(band_ranges):
             mask = (wavelengths >= lower) & (wavelengths <= upper)
             if not np.any(mask):
                 features[f'CN_band_{i}_intensity'] = np.nan
                 features[f'CN_band_{i}_area'] = np.nan
                 continue
-                
+
             band_intensities = intensities[mask]
             band_wavelengths = wavelengths[mask]
-            
+
+            # Ensure 1D arrays
+            band_intensities = np.atleast_1d(band_intensities).flatten()
+            band_wavelengths = np.atleast_1d(band_wavelengths).flatten()
+
+            # Check if arrays have compatible lengths
+            if len(band_intensities) != len(band_wavelengths):
+                features[f'CN_band_{i}_intensity'] = np.nan
+                features[f'CN_band_{i}_area'] = np.nan
+                continue
+
             # Band intensity metrics
             features[f'CN_band_{i}_intensity'] = np.max(band_intensities)
             features[f'CN_band_{i}_area'] = np.trapezoid(band_intensities, band_wavelengths)
