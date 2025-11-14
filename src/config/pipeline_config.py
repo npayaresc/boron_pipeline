@@ -573,7 +573,7 @@ class Config(BaseModel):
 
     # ADDED: Configuration for target value filtering - realistic B concentra5tion range
     target_value_min: Optional[float] = 15.0  # Minimum valid B concentration (boron is typically trace element)
-    target_value_max: Optional[float] = 35.0 # Maximum valid B concentration (typical range 0.001-1.0%)
+    target_value_max: Optional[float] = 55.0 # Maximum valid B concentration (typical range 0.001-1.0%)
     
     # Custom validation set directory - if provided, will process raw files from this directory for validation
     custom_validation_dir: Optional[str] = None
@@ -586,7 +586,7 @@ class Config(BaseModel):
     # Feature Selection Configuration - to handle high-dimension/low-sample scenario
     use_feature_selection: bool = True # Enable/disable feature selection
     feature_selection_method: Literal['selectkbest', 'rfe', 'lasso', 'mutual_info', 'tree_importance'] = 'selectkbest'
-    n_features_to_select: Union[int, float] = 0.40 # Number of features to select (int) or fraction (float < 1.0)
+    n_features_to_select: Union[int, float] = 0.25 # Number of features to select (int) or fraction (float < 1.0)
     feature_selection_score_func: Literal['f_regression', 'mutual_info_regression'] = 'f_regression'
     # For SelectKBest
     rfe_estimator: Literal['random_forest', 'xgboost', 'lightgbm'] = 'random_forest'  # For RFE
@@ -852,7 +852,7 @@ class Config(BaseModel):
     
     @property
     def raw_data_dir_path(self) -> Path:
-        return Path(self.__dict__.get('_raw_data_dir', f'{get_base_path()}/data/raw/10-14-2025'))
+        return Path(self.__dict__.get('_raw_data_dir', f'{get_base_path()}/data/raw/231025'))
     
     @property
     def processed_data_dir_path(self) -> Path:
@@ -888,7 +888,7 @@ class Config(BaseModel):
     
     @property
     def reference_data_path_obj(self) -> Path:
-        return Path(self.__dict__.get('_reference_data_path', f'{get_base_path()}/data/reference_data/lab_Element_Rough_141025_corrected.xlsx'))
+        return Path(self.__dict__.get('_reference_data_path', f'{get_base_path()}/data/reference_data/Lab_Values.xlsx'))
     
     # Properties that return Path objects for existing code compatibility
     @property 
@@ -897,7 +897,7 @@ class Config(BaseModel):
     
     @property
     def raw_data_dir(self) -> Path:
-        return Path(self.__dict__.get('_raw_data_dir', f'{get_base_path()}/data/raw/10-14-2025'))
+        return Path(self.__dict__.get('_raw_data_dir', f'{get_base_path()}/data/raw/231025'))
     
     @property
     def processed_data_dir(self) -> Path:
@@ -933,7 +933,7 @@ class Config(BaseModel):
     
     @property
     def reference_data_path(self) -> Path:
-        return Path(self.__dict__.get('_reference_data_path', f'{get_base_path()}/data/reference_data/lab_Element_Rough_141025_corrected.xlsx'))
+        return Path(self.__dict__.get('_reference_data_path', f'{get_base_path()}/data/reference_data/Lab_Values.xlsx'))
 
     def ensure_paths_exist(self, create_dirs: bool = True) -> None:
         """Ensure all required directories exist, optionally creating them."""
@@ -1027,12 +1027,12 @@ BASE_PATH = get_base_path()
 config = Config(
     run_timestamp="placeholder", 
     _data_dir=str(BASE_PATH / "data"), 
-    _raw_data_dir=str(BASE_PATH / "data" / "raw" / "10-14-2025"), 
+    _raw_data_dir=str(BASE_PATH / "data" / "raw" / "231025"), 
     _processed_data_dir=str(BASE_PATH / "data" / "processed"),
     _model_dir=str(BASE_PATH / "models"), 
     _reports_dir=str(BASE_PATH / "reports"), 
     _log_dir=str(BASE_PATH / "logs"), 
-    _reference_data_path=str(BASE_PATH / "data" / "reference_data" / "lab_Element_Rough_141025_corrected.xlsx"), 
+    _reference_data_path=str(BASE_PATH / "data" / "reference_data" / "Lab_Values.xlsx"), 
     _bad_files_dir=str(BASE_PATH / "bad_files"), 
     _averaged_files_dir=str(BASE_PATH / "data" / "averaged_files_per_sample"), 
     _cleansed_files_dir=str(BASE_PATH / "data" / "cleansed_files_per_sample"), 
